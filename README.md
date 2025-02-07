@@ -1,44 +1,42 @@
 # Project: Data Pipelines with Airflow
-A music streaming company, Sparkify, has decided that it is time to introduce more automation and monitoring to their data warehouse ETL pipelines and come to the conclusion that the best tool to achieve this is Apache Airflow.
+A music streaming company, **Sparkify**, has decided to introduce more automation and monitoring to their data warehouse ETL pipelines. They concluded that **Apache Airflow** is the best tool to achieve this.
 
-They have decided to bring you into the project and expect you to create high grade data pipelines that are dynamic and built from reusable tasks, can be monitored, and allow easy backfills. They have also noted that the data quality plays a big part when analyses are executed on top the data warehouse and want to run tests against their datasets after the ETL steps have been executed to catch any discrepancies in the datasets.
+They have brought you into the project to create **high-grade data pipelines** that are **dynamic, reusable, and easily monitored**. The pipelines should also support **backfills** and include **data quality checks** to detect discrepancies in the datasets.
 
-The source data resides in S3 and needs to be processed in Sparkify's data warehouse in Amazon Redshift. The source datasets consist of JSON logs that tell about user activity in the application and JSON metadata about the songs the users listen to.
+The source data resides in **S3** and needs to be processed in **Amazon Redshift**. The datasets consist of **JSON logs** capturing user activity and **JSON metadata** about the songs users listen to.
 
-# Data Pipelines with Airflow PROJECT SPECIFICATION
+# Project Specification: Data Pipelines with Airflow
 
-# General SPECIFICATIONS
-- DAG can be browsed without issues in the Airflow UI
-- The dag follows the data flow provided in the instructions, all the tasks have a dependency and DAG begins with a start_execution task and ends with a end_execution task.
+## General Specifications
+- The **DAG** can be browsed without issues in the **Airflow UI**.
+- The DAG follows the **data flow** provided in the instructions.
+- All tasks have dependencies, and the DAG begins with a `start_execution` task and ends with an `end_execution` task.
 
-# Dag configuration SPECIFICATIONS
-- DAG contains default_args dict, with the following keys:
+## DAG Configuration Specifications
+- The DAG contains a **default_args** dictionary with the following keys:
+  - `owner`
+  - `depends_on_past`
+  - `start_date`
+  - `retries`
+  - `retry_delay`
+  - `catchup`
+  - `default_args` are bound to the DAG.
+- The DAG object has **default_args** set.
+- The DAG is scheduled to **run once per hour**.
 
-. Owner
-. Depends_on_past
-. Start_date
-. Retries
-. Retry_delay
-. Catchup
-. Defaults_args are bind to the DAG
+## Staging the Data Specifications
+- A task stages data from **S3 to Redshift** (Runs a Redshift COPY statement).
+- Instead of using a **static SQL statement**, the task uses **parameters** to dynamically generate the **COPY statement**.
+- The operator contains **logging** at different execution steps.
+- The **SQL statements** are executed using an **Airflow Hook**.
 
-- The DAG object has default args set
-- The DAG should be scheduled to run once an hour
+## Loading Dimensions and Facts Specifications
+- **Dimensions** are loaded using the **LoadDimension** operator.
+- **Facts** are loaded using the **LoadFact** operator.
+- Instead of a static SQL statement, the tasks use **parameters** to generate the **COPY statement dynamically**.
+- The DAG allows switching between **append-only** and **delete-load** functionality.
 
-# Staging the data SPECIFICATIONS
-- There is a task that to stages data from S3 to Redshift. (Runs a Redshift copy statement)
-- Instead of running a static SQL statement to stage the data, the task uses params to generate the copy statement dynamically
-- The operator contains logging in different steps of the execution
-- The SQL statements are executed by using a Airflow hook
-
-# Loading dimensions and facts SPECIFICATIONS
-- Dimensions are loaded with on the LoadDimension operator
-- Facts are loaded with on the LoadFact operator
-- Instead of running a static SQL statement to stage the data, the task uses params to generate the copy statement dynamically
-- The DAG allows to switch between append-only and delete-load functionality
-
-# Data Quality Checks SPECIFICATIONS
-- Data quality check is done with correct operator
-- The DAG either fails or retries n times
-- Operator uses params to get the tests and the results, tests are not hard coded to the operator
-
+## Data Quality Checks Specifications
+- **Data quality checks** are performed using the correct operator.
+- The DAG either **fails** or **retries** **n times** when checks fail.
+- The operator uses **parameters** to get the tests and expected results (tests are **not hardcoded** in the operator).
