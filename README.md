@@ -1,42 +1,46 @@
-# Project: Data Pipelines with Airflow
-A music streaming company, **Sparkify**, has decided to introduce more automation and monitoring to their data warehouse ETL pipelines. They concluded that **Apache Airflow** is the best tool to achieve this.
+# Project Description
 
-They have brought you into the project to create **high-grade data pipelines** that are **dynamic, reusable, and easily monitored**. The pipelines should also support **backfills** and include **data quality checks** to detect discrepancies in the datasets.
+## Overview
+This project implements a **Data Engineering pipeline** using **Apache Airflow** and **AWS Redshift**. It processes **music streaming data**, extracting it from **AWS S3**, staging it in **Redshift**, transforming it into **fact and dimension tables**, and performing **data quality checks**.
 
-The source data resides in **S3** and needs to be processed in **Amazon Redshift**. The datasets consist of **JSON logs** capturing user activity and **JSON metadata** about the songs users listen to.
+---
 
-# Project Specification: Data Pipelines with Airflow
+## Key Components
 
-## General Specifications
-- The **DAG** can be browsed without issues in the **Airflow UI**.
-- The DAG follows the **data flow** provided in the instructions.
-- All tasks have dependencies, and the DAG begins with a `start_execution` task and ends with an `end_execution` task.
+### 1. Airflow DAG (`the_dag.py`)
+- Defines an **ETL workflow** for loading and transforming data in **Redshift**.
+- Uses **Airflow Operators** for staging, loading, and validating data.
+- Runs **hourly** (`0 * * * *`).
+- Establishes task dependencies.
 
-## DAG Configuration Specifications
-- The DAG contains a **default_args** dictionary with the following keys:
-  - `owner`
-  - `depends_on_past`
-  - `start_date`
-  - `retries`
-  - `retry_delay`
-  - `catchup`
-  - `default_args` are bound to the DAG.
-- The DAG object has **default_args** set.
-- The DAG is scheduled to **run once per hour**.
+### 2. Staging Data (`stage_redshift.py`)
+- Uses `StageToRedshiftOperator` to copy **raw JSON data** from **S3** to **Redshift staging tables**.
+- **Data sources:**
+  - `log_data`: User activity logs (`s3://udacity-dend/log-data/`).
+  - `song_data`: Metadata of songs (`s3://udacity-dend/song-data/A/A/A`).
 
-## Staging the Data Specifications
-- A task stages data from **S3 to Redshift** (Runs a Redshift COPY statement).
-- Instead of using a **static SQL statement**, the task uses **parameters** to dynamically generate the **COPY statement**.
-- The operator contains **logging** at different execution steps.
-- The **SQL statements** are executed using an **Airflow Hook**.
+### 3. SQL Queries (`sql_queries.py`)
+- Defines **SQL statements** for inserting data into Redshift tables.
+- Handles **fact (`songplays`)** and **dimension tables (`users, songs, artists, time`)**.
 
-## Loading Dimensions and Facts Specifications
-- **Dimensions** are loaded using the **LoadDimension** operator.
-- **Facts** are loaded using the **LoadFact** operator.
-- Instead of a static SQL statement, the tasks use **parameters** to generate the **COPY statement dynamically**.
-- The DAG allows switching between **append-only** and **delete-load** functionality.
+### 4. Fact Table Loading (`load_fact.py`)
+- Uses `LoadFactOperator` to insert data into the **fact table (`songplays`)**.
+- Extracts data from **staging tables**.
 
-## Data Quality Checks Specifications
-- **Data quality checks** are performed using the correct operator.
-- The DAG either **fails** or **retries** **n times** when checks fail.
-- The operator uses **parameters** to get the tests and expected results (tests are **not hardcoded** in the operator).
+### 5. Dimension Table Loading (`load_dimension.py`)
+- Uses `LoadDimensionOperator` to insert data into **dimension tables** (`users, songs, artists, time`).
+- Supports **truncate-insert** (clearing old data before inserting new ones).
+
+### 6. Data Quality Checks (`data_quality.py`)
+- Uses `DataQualityOperator` to validate Redshift tables.
+- Runs **SQL tests** to ensure tables are populated correctly.
+
+---
+
+## Workflow Execution
+1. **Extract:** Load raw **JSON** data from **S3** to **Redshift staging tables**.
+2. **Transform:** Process and insert data into **fact and dimension tables**.
+3. **Load:** Store structured tables in **Redshift**.
+4. **Validate:** Run **data quality checks**.
+
+This pipeline ensures an efficient and automated ETL process for processing music streaming data at scale.
